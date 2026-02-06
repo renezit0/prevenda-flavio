@@ -1122,6 +1122,84 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     return bytes;
   };
 
+  function imprimirComprovantePrevenda({ codigo, funcionario, cliente, produtos }) {
+    try {
+      const total = produtos.reduce((sum, p) => sum + (p.total || 0), 0);
+      const now = new Date();
+      const pad2 = (n) => String(n).padStart(2, '0');
+      const data = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()}`;
+      const hora = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+
+      const itensHtml = produtos.map((p) => `
+        <div class="item">
+          <div class="item-nome">${String(p.NOME || '').slice(0, 48)}</div>
+          <div class="item-linha">
+            <span>${p.quantidade} x ${formatMoney(p.precoUnitario)}</span>
+            <span>${formatMoney(p.total)}</span>
+          </div>
+          ${p.retirada ? `<div class="item-retirada">Retirada: ${p.retirada.loja_id}${p.retirada.loja_nome ? ` - ${formatLojaNome(p.retirada.loja_nome)}` : ''} (Qtd: ${p.retirada.quantidade})</div>` : ''}
+        </div>
+      `).join('');
+
+      const html = `
+        <!doctype html>
+        <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Pré-venda ${codigo}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
+          <style>
+            @page { size: 80mm auto; margin: 6mm; }
+            * { box-sizing: border-box; }
+            body { margin: 0; font-family: Arial, sans-serif; color: #111; }
+            .wrap { width: 100%; }
+            .center { text-align: center; }
+            .title { font-size: 14px; font-weight: 700; }
+            .sub { font-size: 12px; }
+            .hr { border-top: 1px dashed #333; margin: 8px 0; }
+            .line { display: flex; justify-content: space-between; font-size: 12px; }
+            .item { margin-bottom: 6px; }
+            .item-nome { font-size: 12px; font-weight: 600; }
+            .item-linha { display: flex; justify-content: space-between; font-size: 12px; }
+            .item-retirada { font-size: 11px; color: #2563eb; margin-top: 2px; }
+            .barcode { font-family: 'Libre Barcode 39', monospace; font-size: 36px; line-height: 1; }
+            .small { font-size: 11px; }
+          </style>
+        </head>
+        <body>
+          <div class="wrap">
+            <div class="center title">PRÉ-VENDA</div>
+            <div class="center sub">Código: C${codigo}</div>
+            <div class="center barcode">*C${codigo}*</div>
+            <div class="center small">${data} ${hora}</div>
+            <div class="hr"></div>
+            <div class="line"><span>Atendente:</span><span>${funcionario?.NOME || ''}</span></div>
+            ${cliente ? `<div class="line"><span>Cliente:</span><span>${cliente?.NOME || ''}</span></div>` : ''}
+            <div class="hr"></div>
+            ${itensHtml}
+            <div class="hr"></div>
+            <div class="line"><strong>Total</strong><strong>${formatMoney(total)}</strong></div>
+            <div class="hr"></div>
+            <div class="center small">Levar este comprovante para finalizar.</div>
+          </div>
+          <script>
+            setTimeout(() => { window.print(); }, 200);
+            window.onafterprint = () => window.close();
+          </script>
+        </body>
+        </html>
+      `;
+
+      const win = window.open('', '_blank', 'width=400,height=600');
+      if (!win) return;
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    } catch (e) {
+      console.error('Falha ao imprimir comprovante:', e);
+    }
+  }
+
   // Gerar arquivo DBF
   const gerarDbf = useCallback(async () => {
     if (!funcionario) {
@@ -1343,84 +1421,6 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     removerProduto,
     setErroToast,
   ]);
-
-  const imprimirComprovantePrevenda = useCallback(({ codigo, funcionario, cliente, produtos }) => {
-    try {
-      const total = produtos.reduce((sum, p) => sum + (p.total || 0), 0);
-      const now = new Date();
-      const pad2 = (n) => String(n).padStart(2, '0');
-      const data = `${pad2(now.getDate())}/${pad2(now.getMonth() + 1)}/${now.getFullYear()}`;
-      const hora = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
-
-      const itensHtml = produtos.map((p) => `
-        <div class="item">
-          <div class="item-nome">${String(p.NOME || '').slice(0, 48)}</div>
-          <div class="item-linha">
-            <span>${p.quantidade} x ${formatMoney(p.precoUnitario)}</span>
-            <span>${formatMoney(p.total)}</span>
-          </div>
-          ${p.retirada ? `<div class="item-retirada">Retirada: ${p.retirada.loja_id}${p.retirada.loja_nome ? ` - ${formatLojaNome(p.retirada.loja_nome)}` : ''} (Qtd: ${p.retirada.quantidade})</div>` : ''}
-        </div>
-      `).join('');
-
-      const html = `
-        <!doctype html>
-        <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>Pré-venda ${codigo}</title>
-          <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
-          <style>
-            @page { size: 80mm auto; margin: 6mm; }
-            * { box-sizing: border-box; }
-            body { margin: 0; font-family: Arial, sans-serif; color: #111; }
-            .wrap { width: 100%; }
-            .center { text-align: center; }
-            .title { font-size: 14px; font-weight: 700; }
-            .sub { font-size: 12px; }
-            .hr { border-top: 1px dashed #333; margin: 8px 0; }
-            .line { display: flex; justify-content: space-between; font-size: 12px; }
-            .item { margin-bottom: 6px; }
-            .item-nome { font-size: 12px; font-weight: 600; }
-            .item-linha { display: flex; justify-content: space-between; font-size: 12px; }
-            .item-retirada { font-size: 11px; color: #2563eb; margin-top: 2px; }
-            .barcode { font-family: 'Libre Barcode 39', monospace; font-size: 36px; line-height: 1; }
-            .small { font-size: 11px; }
-          </style>
-        </head>
-        <body>
-          <div class="wrap">
-            <div class="center title">PRÉ-VENDA</div>
-            <div class="center sub">Código: C${codigo}</div>
-            <div class="center barcode">*C${codigo}*</div>
-            <div class="center small">${data} ${hora}</div>
-            <div class="hr"></div>
-            <div class="line"><span>Atendente:</span><span>${funcionario?.NOME || ''}</span></div>
-            ${cliente ? `<div class="line"><span>Cliente:</span><span>${cliente?.NOME || ''}</span></div>` : ''}
-            <div class="hr"></div>
-            ${itensHtml}
-            <div class="hr"></div>
-            <div class="line"><strong>Total</strong><strong>${formatMoney(total)}</strong></div>
-            <div class="hr"></div>
-            <div class="center small">Levar este comprovante para finalizar.</div>
-          </div>
-          <script>
-            setTimeout(() => { window.print(); }, 200);
-            window.onafterprint = () => window.close();
-          </script>
-        </body>
-        </html>
-      `;
-
-      const win = window.open('', '_blank', 'width=400,height=600');
-      if (!win) return;
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-    } catch (e) {
-      console.error('Falha ao imprimir comprovante:', e);
-    }
-  }, [formatLojaNome, formatMoney]);
 
   const formatMoney = (value) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
