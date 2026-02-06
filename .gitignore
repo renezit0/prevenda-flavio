@@ -10,6 +10,8 @@
 
 # production
 /build
+build.tar.gz
+.npm-cache/
 
 # misc
 .DS_Store
