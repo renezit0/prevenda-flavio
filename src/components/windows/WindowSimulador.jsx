@@ -721,7 +721,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     } finally {
       setRetiradaLoading(false);
     }
-  }, [formatLojaNome, userData]);
+  }, [formatLojaNome]);
 
   const confirmarRetirada = () => {
     if (produtoSelecionado == null) return;
@@ -837,7 +837,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     }
   }, [produtoSelecionado, produtos, cliente, tokenValue, setErroToast]);
 
-  const gerarDbfLocal = ({ funcionario, cliente, produtos, dataReceita, crmMedico, ufCrm }) => {
+  const gerarDbfLocal = useCallback(({ funcionario, cliente, produtos, dataReceita, crmMedico, ufCrm }) => {
     const fieldDefs = [
       { name: 'TIPO', type: 'C', length: 1, decimals: 0 },
       { name: 'VEND', type: 'N', length: 6, decimals: 0 },
@@ -1109,7 +1109,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     recBytes.push(0x1A);
 
     return new Uint8Array([...header, ...fields, ...recBytes]);
-  };
+  }, [encodeLatin1, toUint16LE, toUint32LE]);
 
   const toUint16LE = (v) => [v & 0xff, (v >> 8) & 0xff];
   const toUint32LE = (v) => [v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff];
@@ -1344,7 +1344,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     setErroToast,
   ]);
 
-  function imprimirComprovantePrevenda({ codigo, funcionario, cliente, produtos }) {
+  const imprimirComprovantePrevenda = useCallback(({ codigo, funcionario, cliente, produtos }) => {
     try {
       const total = produtos.reduce((sum, p) => sum + (p.total || 0), 0);
       const now = new Date();
@@ -1420,7 +1420,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     } catch (e) {
       console.error('Falha ao imprimir comprovante:', e);
     }
-  }
+  }, [formatLojaNome, formatMoney]);
 
   const formatMoney = (value) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
