@@ -1,6 +1,6 @@
 {
   "name": "prevenda-flavio",
-  "version": "1.0.10",
+  "version": "1.0.12",
   "description": "Simulador de Venda (Pré-venda) - Desktop",
   "private": true,
   "main": "electron/main.js",
