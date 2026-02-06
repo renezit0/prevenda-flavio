@@ -101,6 +101,30 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
   };
 
   useEffect(() => {
+    const api = window?.desktop;
+    if (!api?.onUpdateAvailable) return undefined;
+
+    const offAvailable = api.onUpdateAvailable((payload) => {
+      const msg = payload?.message || 'Atualização disponível.';
+      mostrarToast('info', msg);
+    });
+    const offDownloaded = api.onUpdateDownloaded((payload) => {
+      const msg = payload?.message || 'Atualização baixada. Reiniciando.';
+      mostrarToast('sucesso', msg);
+    });
+    const offError = api.onUpdateError((payload) => {
+      const msg = payload?.message || 'Erro ao atualizar.';
+      mostrarToast('erro', msg);
+    });
+
+    return () => {
+      offAvailable?.();
+      offDownloaded?.();
+      offError?.();
+    };
+  }, [mostrarToast]);
+
+  useEffect(() => {
     const carregarBanners = async () => {
       setBannersLoading(true);
       setBannersError('');
@@ -693,46 +717,6 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     }
   };
 
-  const abrirEstoqueRede = async (produto) => {
-    if (!produto) return;
-    setProdutoSelecionado(null);
-    setRetiradaProdutoTemp(produto);
-    setShowRetirada(true);
-    setRetiradaErro('');
-    setRetiradaLoading(true);
-    setRetiradaLoja('');
-    setRetiradaQuantidade(1);
-
-    try {
-      const query = `
-        SELECT
-          e.CDFIL AS loja_id,
-          f.ABREV AS loja_nome,
-          e.ESTOQ AS estoque
-        FROM estwin.sceestoq e
-        LEFT JOIN estwin.scefilial f ON f.CDFIL = e.CDFIL
-        WHERE e.CDPRODU = '${produto.CDPRODU}'
-          AND e.ESTOQ > 0
-        ORDER BY e.ESTOQ DESC
-      `;
-      const rows = await queryService.execute(query);
-      const cleaned = (rows || []).map((r) => ({
-        ...r,
-        loja_nome: formatLojaNome(r.loja_nome),
-      }));
-      setRetiradaLojas(cleaned);
-      if (cleaned && cleaned.length > 0) {
-        setRetiradaLoja(String(cleaned[0].loja_id));
-      }
-    } catch (e) {
-      console.error('Erro ao buscar lojas com estoque:', e);
-      setRetiradaErro('Erro ao buscar lojas disponíveis');
-      setRetiradaLojas([]);
-    } finally {
-      setRetiradaLoading(false);
-    }
-  };
-
   const confirmarRetirada = () => {
     if (produtoSelecionado == null) return;
     if (!retiradaLoja) {
@@ -984,7 +968,27 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showCancelModal, showDeleteModal, showTokenModal, showEstoque, showPreco, gerandoDbf, funcionario, produtos, codigoProduto, produtoSelecionado, showDropdown, produtosDropdown, dropdownIndex]);
+  }, [
+    showCancelModal,
+    showDeleteModal,
+    showTokenModal,
+    showEstoque,
+    showPreco,
+    gerandoDbf,
+    funcionario,
+    produtos,
+    codigoProduto,
+    produtoSelecionado,
+    showDropdown,
+    produtosDropdown,
+    dropdownIndex,
+    abrirRetiradaModal,
+    aplicarToken,
+    cliente,
+    gerarDbf,
+    removerProduto,
+    setErroToast,
+  ]);
 
   const formatLojaNome = (nome) => {
     if (!nome) return '';

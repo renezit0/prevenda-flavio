@@ -8,7 +8,6 @@ const WindowEstoque = ({ onClose, zIndex, onFocus, userData, autoSearchCode, rea
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
   const [lojas, setLojas] = useState([]);
-  const [mostrarEndereco, setMostrarEndereco] = useState(false);
   const [nomeProduto, setNomeProduto] = useState('');
   const [sugestoes, setSugestoes] = useState([]);
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);

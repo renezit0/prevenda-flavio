@@ -1,8 +1,14 @@
-const { app, BrowserWindow, shell, dialog } = require('electron');
+const { app, BrowserWindow, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 
 let mainWindow = null;
+
+const sendToRenderer = (channel, payload) => {
+  if (mainWindow && mainWindow.webContents) {
+    mainWindow.webContents.send(channel, payload);
+  }
+};
 
 const createWindow = () => {
   const { width: screenWidth, height: screenHeight } = require('electron').screen.getPrimaryDisplay().workAreaSize;
@@ -49,20 +55,23 @@ app.whenReady().then(() => {
 });
 
 autoUpdater.on('update-available', () => {
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'Atualização disponível',
-    message: 'Uma nova versão está disponível e será baixada em segundo plano.'
+  sendToRenderer('auto-update-available', {
+    message: 'Atualização disponível. Download em segundo plano.'
   });
 });
 
 autoUpdater.on('update-downloaded', () => {
-  dialog.showMessageBox({
-    type: 'info',
-    title: 'Atualização pronta',
-    message: 'Atualização baixada. O app será reiniciado para instalar.',
-  }).then(() => {
+  sendToRenderer('auto-update-downloaded', {
+    message: 'Atualização baixada. Reiniciando para instalar.'
+  });
+  setTimeout(() => {
     autoUpdater.quitAndInstall();
+  }, 2000);
+});
+
+autoUpdater.on('error', (err) => {
+  sendToRenderer('auto-update-error', {
+    message: `Erro ao atualizar: ${err?.message || 'desconhecido'}`
   });
 });
 

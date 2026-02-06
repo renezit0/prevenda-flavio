@@ -19,14 +19,6 @@ const apiProxy = axios.create({
   },
 });
 
-const legacyApi = axios.create({
-  baseURL: window.location.origin,
-  timeout: 15000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
 function addAuthToken(config) {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
