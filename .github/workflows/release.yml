@@ -25,6 +25,6 @@ jobs:
         run: npm install --no-audit --no-fund
 
       - name: Build and publish
-        run: npm run dist
+        run: npm run dist -- --publish=always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
