@@ -837,7 +837,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     }
   }, [produtoSelecionado, produtos, cliente, tokenValue, setErroToast]);
 
-  const gerarDbfLocal = useCallback(({ funcionario, cliente, produtos, dataReceita, crmMedico, ufCrm }) => {
+  function gerarDbfLocal({ funcionario, cliente, produtos, dataReceita, crmMedico, ufCrm }) {
     const fieldDefs = [
       { name: 'TIPO', type: 'C', length: 1, decimals: 0 },
       { name: 'VEND', type: 'N', length: 6, decimals: 0 },
@@ -1025,7 +1025,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
       total_produtos: produtos.length,
       url,
     };
-  };
+  }
 
   const buildRecord = (fieldDefs, values) => {
     let out = String.fromCharCode(0x20);
