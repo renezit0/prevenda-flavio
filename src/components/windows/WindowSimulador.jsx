@@ -1074,7 +1074,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     };
   };
 
-  const buildDbf = (fieldDefs, records) => {
+  function buildDbf(fieldDefs, records) {
     const recordLength = 1 + fieldDefs.reduce((acc, f) => acc + f.length, 0);
     const headerLength = 32 + (fieldDefs.length * 32) + 1;
     const numRecords = records.length;
@@ -1109,7 +1109,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     recBytes.push(0x1A);
 
     return new Uint8Array([...header, ...fields, ...recBytes]);
-  }, [encodeLatin1, toUint16LE, toUint32LE]);
+  }
 
   const toUint16LE = (v) => [v & 0xff, (v >> 8) & 0xff];
   const toUint32LE = (v) => [v & 0xff, (v >> 8) & 0xff, (v >> 16) & 0xff, (v >> 24) & 0xff];
