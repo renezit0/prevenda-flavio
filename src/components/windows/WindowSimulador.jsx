@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import DraggableWindow from './DraggableWindow';
 import { queryService, bannersService } from '../../services/api';
 import WindowPreco from './WindowPreco';
@@ -56,12 +56,12 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
   const [tokenLoading, setTokenLoading] = useState(false);
   const cancelConfirmBtnRef = useRef(null);
 
-  const setErroToast = (msg) => {
+  const setErroToast = useCallback((msg) => {
     setErro(msg);
     if (msg) {
       mostrarToast('erro', msg);
     }
-  };
+  }, [mostrarToast]);
 
   const formatCpf = (value) => {
     const raw = String(value || '').trim();
@@ -670,14 +670,14 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
   };
 
   // Remover produto
-  const removerProduto = (index) => {
+  const removerProduto = useCallback((index) => {
     setProdutos(prev => prev.filter((_, i) => i !== index));
     if (produtoSelecionado === index) {
       setProdutoSelecionado(null);
     }
-  };
+  }, [produtoSelecionado]);
 
-  const abrirRetiradaModal = async (produto, index) => {
+  const abrirRetiradaModal = useCallback(async (produto, index) => {
     if (!produto) return;
     setProdutoSelecionado(index);
     setRetiradaProdutoTemp(null);
@@ -715,7 +715,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     } finally {
       setRetiradaLoading(false);
     }
-  };
+  }, [formatLojaNome, userData]);
 
   const confirmarRetirada = () => {
     if (produtoSelecionado == null) return;
@@ -774,7 +774,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     setTimeout(() => matriculaRef.current?.focus(), 0);
   };
 
-  const aplicarToken = async () => {
+  const aplicarToken = useCallback(async () => {
     if (produtoSelecionado == null || !produtos[produtoSelecionado]) {
       setErroToast('Selecione um produto para aplicar token');
       return;
@@ -829,166 +829,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     } finally {
       setTokenLoading(false);
     }
-  };
-
-  useEffect(() => {
-    const onKeyDown = (e) => {
-      if (showDropdown && produtosDropdown.length > 0 && (e.key === 'F6' || e.key === 'F5')) {
-        // evita dropdown ficar por trás quando abrir outras janelas
-        setShowDropdown(false);
-      }
-      if (showCancelModal) {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          setShowCancelModal(false);
-          return;
-        }
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          resetPrevenda();
-          setShowCancelModal(false);
-          return;
-        }
-      }
-      if (showDeleteModal) {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          setShowDeleteModal(false);
-          return;
-        }
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          if (produtoSelecionado != null) {
-            removerProduto(produtoSelecionado);
-          }
-          setShowDeleteModal(false);
-          return;
-        }
-      }
-      if (showTokenModal) {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          setShowTokenModal(false);
-          return;
-        }
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          aplicarToken();
-          return;
-        }
-      }
-      if (e.key === 'F9') {
-        e.preventDefault();
-        setShowCancelModal(true);
-        return;
-      }
-      if (e.key === 'Escape') {
-        if (showEstoque) {
-          setShowEstoque(false);
-          return;
-        }
-        if (showPreco) {
-          setShowPreco(false);
-          return;
-        }
-      }
-      if (e.key === 'F2') {
-        e.preventDefault();
-        if (gerandoDbf) return;
-        if (!funcionario || produtos.length === 0) {
-          setErroToast('Selecione funcionário e adicione produtos antes de gerar');
-          return;
-        }
-        gerarDbf();
-        return;
-      }
-      if (e.key === 'F3') {
-        e.preventDefault();
-        if (produtoSelecionado == null || !produtos[produtoSelecionado]) {
-          setErroToast('Selecione um produto para excluir');
-          return;
-        }
-        setShowDeleteModal(true);
-        return;
-      }
-      if (e.key === 'F5') {
-        e.preventDefault();
-        const dropdownSelected = showDropdown && produtosDropdown.length > 0 ? (produtosDropdown[dropdownIndex] || produtosDropdown[0]) : null;
-        const rawValor = dropdownSelected?.CDPRODU ? String(dropdownSelected.CDPRODU) : String(codigoProduto || '').trim();
-        const valorLimpo = rawValor.replace(/\D/g, '');
-        const valor = valorLimpo || rawValor;
-        const isNumero = /^\d+$/.test(valorLimpo);
-        setShowDropdown(false);
-        if (dropdownSelected?.CDPRODU) {
-          setCodigoProduto(String(dropdownSelected.CDPRODU));
-        }
-        setPrecoCodigoInicial(valor);
-        setPrecoAutoBuscar(Boolean(valorLimpo && isNumero));
-        setShowPreco(true);
-        return;
-      }
-      if (e.key === 'F6') {
-        e.preventDefault();
-        const dropdownSelected = showDropdown && produtosDropdown.length > 0 ? (produtosDropdown[dropdownIndex] || produtosDropdown[0]) : null;
-        const selected = dropdownSelected || (produtoSelecionado != null ? produtos[produtoSelecionado] : null);
-        const codigo = selected?.CDPRODU || String(codigoProduto || '').trim();
-        if (!codigo) {
-          setErroToast('Informe um código ou selecione um produto para consultar estoque');
-          return;
-        }
-        setShowDropdown(false);
-        if (selected?.CDPRODU) {
-          setCodigoProduto(String(selected.CDPRODU));
-        }
-        setEstoqueCodigoInicial(String(codigo));
-        setShowEstoque(true);
-        return;
-      }
-      if (e.ctrlKey && (e.key === 'e' || e.key === 'E')) {
-        e.preventDefault();
-        if (produtoSelecionado == null || !produtos[produtoSelecionado]) {
-          setErroToast('Selecione um produto para escolher retirada (Ctrl+E)');
-          return;
-        }
-        abrirRetiradaModal(produtos[produtoSelecionado], produtoSelecionado);
-      }
-      if (e.ctrlKey && (e.key === 'h' || e.key === 'H')) {
-        e.preventDefault();
-        if (produtoSelecionado == null || !produtos[produtoSelecionado]) {
-          setErroToast('Selecione um produto para aplicar token');
-          return;
-        }
-        if (!cliente) {
-          setErroToast('Informe o cliente antes de usar token');
-          return;
-        }
-        setTokenValue('');
-        setShowTokenModal(true);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [
-    showCancelModal,
-    showDeleteModal,
-    showTokenModal,
-    showEstoque,
-    showPreco,
-    gerandoDbf,
-    funcionario,
-    produtos,
-    codigoProduto,
-    produtoSelecionado,
-    showDropdown,
-    produtosDropdown,
-    dropdownIndex,
-    abrirRetiradaModal,
-    aplicarToken,
-    cliente,
-    gerarDbf,
-    removerProduto,
-    setErroToast,
-  ]);
+  }, [produtoSelecionado, produtos, cliente, tokenValue, setErroToast]);
 
   const formatLojaNome = (nome) => {
     if (!nome) return '';
@@ -1282,7 +1123,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
   };
 
   // Gerar arquivo DBF
-  const gerarDbf = async () => {
+  const gerarDbf = useCallback(async () => {
     if (!funcionario) {
       setErroToast('Selecione um funcionário');
       return;
@@ -1342,7 +1183,166 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     } finally {
       setGerandoDbf(false);
     }
-  };
+  }, [funcionario, produtos, cliente, dataReceita, crmMedico, ufCrm, gerarDbfLocal, imprimirComprovantePrevenda, setErroToast]);
+
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (showDropdown && produtosDropdown.length > 0 && (e.key === 'F6' || e.key === 'F5')) {
+        // evita dropdown ficar por trás quando abrir outras janelas
+        setShowDropdown(false);
+      }
+      if (showCancelModal) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setShowCancelModal(false);
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          resetPrevenda();
+          setShowCancelModal(false);
+          return;
+        }
+      }
+      if (showDeleteModal) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setShowDeleteModal(false);
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (produtoSelecionado != null) {
+            removerProduto(produtoSelecionado);
+          }
+          setShowDeleteModal(false);
+          return;
+        }
+      }
+      if (showTokenModal) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setShowTokenModal(false);
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          aplicarToken();
+          return;
+        }
+      }
+      if (e.key === 'F9') {
+        e.preventDefault();
+        setShowCancelModal(true);
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (showEstoque) {
+          setShowEstoque(false);
+          return;
+        }
+        if (showPreco) {
+          setShowPreco(false);
+          return;
+        }
+      }
+      if (e.key === 'F2') {
+        e.preventDefault();
+        if (gerandoDbf) return;
+        if (!funcionario || produtos.length === 0) {
+          setErroToast('Selecione funcionário e adicione produtos antes de gerar');
+          return;
+        }
+        gerarDbf();
+        return;
+      }
+      if (e.key === 'F3') {
+        e.preventDefault();
+        if (produtoSelecionado == null || !produtos[produtoSelecionado]) {
+          setErroToast('Selecione um produto para excluir');
+          return;
+        }
+        setShowDeleteModal(true);
+        return;
+      }
+      if (e.key === 'F5') {
+        e.preventDefault();
+        const dropdownSelected = showDropdown && produtosDropdown.length > 0 ? (produtosDropdown[dropdownIndex] || produtosDropdown[0]) : null;
+        const rawValor = dropdownSelected?.CDPRODU ? String(dropdownSelected.CDPRODU) : String(codigoProduto || '').trim();
+        const valorLimpo = rawValor.replace(/\\D/g, '');
+        const valor = valorLimpo || rawValor;
+        const isNumero = /^\\d+$/.test(valorLimpo);
+        setShowDropdown(false);
+        if (dropdownSelected?.CDPRODU) {
+          setCodigoProduto(String(dropdownSelected.CDPRODU));
+        }
+        setPrecoCodigoInicial(valor);
+        setPrecoAutoBuscar(Boolean(valorLimpo && isNumero));
+        setShowPreco(true);
+        return;
+      }
+      if (e.key === 'F6') {
+        e.preventDefault();
+        const dropdownSelected = showDropdown && produtosDropdown.length > 0 ? (produtosDropdown[dropdownIndex] || produtosDropdown[0]) : null;
+        const selected = dropdownSelected || (produtoSelecionado != null ? produtos[produtoSelecionado] : null);
+        const codigo = selected?.CDPRODU || String(codigoProduto || '').trim();
+        if (!codigo) {
+          setErroToast('Informe um código ou selecione um produto para consultar estoque');
+          return;
+        }
+        setShowDropdown(false);
+        if (selected?.CDPRODU) {
+          setCodigoProduto(String(selected.CDPRODU));
+        }
+        setEstoqueCodigoInicial(String(codigo));
+        setShowEstoque(true);
+        return;
+      }
+      if (e.ctrlKey && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        if (produtoSelecionado == null || !produtos[produtoSelecionado]) {
+          setErroToast('Selecione um produto para escolher retirada (Ctrl+E)');
+          return;
+        }
+        abrirRetiradaModal(produtos[produtoSelecionado], produtoSelecionado);
+      }
+      if (e.ctrlKey && (e.key === 'h' || e.key === 'H')) {
+        e.preventDefault();
+        if (produtoSelecionado == null || !produtos[produtoSelecionado]) {
+          setErroToast('Selecione um produto para aplicar token');
+          return;
+        }
+        if (!cliente) {
+          setErroToast('Informe o cliente antes de usar token');
+          return;
+        }
+        setTokenValue('');
+        setShowTokenModal(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    showCancelModal,
+    showDeleteModal,
+    showTokenModal,
+    showEstoque,
+    showPreco,
+    gerandoDbf,
+    funcionario,
+    produtos,
+    codigoProduto,
+    produtoSelecionado,
+    showDropdown,
+    produtosDropdown,
+    dropdownIndex,
+    abrirRetiradaModal,
+    aplicarToken,
+    cliente,
+    gerarDbf,
+    removerProduto,
+    setErroToast,
+  ]);
 
   const imprimirComprovantePrevenda = ({ codigo, funcionario, cliente, produtos }) => {
     try {
