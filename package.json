@@ -1,6 +1,6 @@
 {
   "name": "prevenda-flavio",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Simulador de Venda (Pré-venda) - Desktop",
   "private": true,
   "main": "electron/main.js",
@@ -38,6 +38,9 @@
     "appId": "com.seellbr.prevenda",
     "productName": "PreVenda Flavio",
     "icon": "electron/icons/icon.png",
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
     "files": [
       "build/**/*",
       "electron/**/*",

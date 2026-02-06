@@ -677,6 +677,12 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     }
   }, [produtoSelecionado]);
 
+  const formatLojaNome = (nome) => {
+    if (!nome) return '';
+    const raw = String(nome).trim();
+    return raw.replace(/^\s*\d+\s*[-–]\s*/i, '');
+  };
+
   const abrirRetiradaModal = useCallback(async (produto, index) => {
     if (!produto) return;
     setProdutoSelecionado(index);
@@ -830,12 +836,6 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
       setTokenLoading(false);
     }
   }, [produtoSelecionado, produtos, cliente, tokenValue, setErroToast]);
-
-  const formatLojaNome = (nome) => {
-    if (!nome) return '';
-    const raw = String(nome).trim();
-    return raw.replace(/^\s*\d+\s*[-–]\s*/i, '');
-  };
 
   const gerarDbfLocal = ({ funcionario, cliente, produtos, dataReceita, crmMedico, ufCrm }) => {
     const fieldDefs = [
@@ -1344,7 +1344,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     setErroToast,
   ]);
 
-  const imprimirComprovantePrevenda = ({ codigo, funcionario, cliente, produtos }) => {
+  function imprimirComprovantePrevenda({ codigo, funcionario, cliente, produtos }) {
     try {
       const total = produtos.reduce((sum, p) => sum + (p.total || 0), 0);
       const now = new Date();
@@ -1420,7 +1420,7 @@ const WindowSimulador = ({ onClose, zIndex, onFocus, userData, embedded = false 
     } catch (e) {
       console.error('Falha ao imprimir comprovante:', e);
     }
-  };
+  }
 
   const formatMoney = (value) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
